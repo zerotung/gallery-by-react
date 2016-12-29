@@ -30,6 +30,8 @@ html, body {
 
   @at-root {
     .img-figure {
+      position: absolute;
+
       width: 320px;
       height: 360px;
       margin: 0;
