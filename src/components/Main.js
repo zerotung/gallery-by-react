@@ -26,8 +26,16 @@ imageDatas = (function genImageURL(imageDatasArr) {
  * @param  {int} high 最大值
  * @return {int}      生成的随机整数
  */
-function getRangeRandom (low, high) {
+function getRangeRandom(low, high) {
 	return Math.ceil((Math.random() * (high - low) + low))
+}
+
+/**
+ * 获取 0~30° 之间的一个任意的正负值
+ * @return {int} 返回的角度值
+ */
+function get30DegRandom() {
+	return (Math.random() > 0.5 ? '' : '-') + Math.ceil(Math.random() * 30);
 }
 
 class ImageFigure extends React.Component {
@@ -40,6 +48,13 @@ class ImageFigure extends React.Component {
 		// 如果props属性中指定了这张图片的位置，则使用
 		if (this.props.arrange.pos) {
 			styleObj = this.props.arrange.pos;
+		}
+
+		// 如果图片的旋转角度有值且不为零，添加旋转角度
+		if (this.props.arrange.rotate) {
+			(['-moz-', '-ms-', '-webkit-', '']).forEach(function (value) {
+				styleObj[value + 'transform'] = 'rotate(' + this.props.arrange.rotate + 'deg)';
+			}.bind(this));
 		}
 
 		return (
@@ -59,7 +74,7 @@ class AppComponent extends React.Component {
 	 Constant = {
 	 	centerPos: {
 	 		left: 0,
-	 		right: 0
+	 		top: 0
 	 	},
 	 	hPosRange: {  // 水平方向的取值范围
 	 		leftSecX: [0, 0],
@@ -80,7 +95,8 @@ class AppComponent extends React.Component {
 					pos: {
 						left: '0',
 						top: '0'
-					}
+					},
+					rotate: 0
 				}*/
 			]
 		}
@@ -96,62 +112,71 @@ class AppComponent extends React.Component {
 	rearrange(centerIndex) {
 
 		var imgsArrangeArr = this.state.imgsArrangeArr,
-		    Constant = this.Constant,
-		    centerPos = Constant.centerPos,
-		    hPosRange = Constant.hPosRange,
-		    vPosRange = Constant.vPosRange,
-		    hPosRangeLeftSecX = hPosRange.leftSecX,
-		    hPosRangeRightSecX = hPosRange.rightSecX,
-		    hPosRangeY = hPosRange.y,
-		    vPosRangeTopY = vPosRange.topY,
-		    vPosRangeX = vPosRange.x,
+			Constant = this.Constant,
+			centerPos = Constant.centerPos,
+			hPosRange = Constant.hPosRange,
+			vPosRange = Constant.vPosRange,
+			hPosRangeLeftSecX = hPosRange.leftSecX,
+			hPosRangeRightSecX = hPosRange.rightSecX,
+			hPosRangeY = hPosRange.y,
+			vPosRangeTopY = vPosRange.topY,
+			vPosRangeX = vPosRange.x,
 
-		    imgsArrangeTopArr = [],
-		    topImgNum = Math.ceil(Math.random() * 2),  //取一个或者不取
-		    topImgSpliceIndex = 0,
-		    imgsArrangeCenterArr = imgsArrangeArr.splice(centerIndex, 1);
+			imgsArrangeTopArr = [],
+			topImgNum = Math.ceil(Math.random() * 2),  //取一个或者不取
+			topImgSpliceIndex = 0,
+			imgsArrangeCenterArr = imgsArrangeArr.splice(centerIndex, 1);
 
-		    // 首先居中 centerIndex 的图片
-		    imgsArrangeCenterArr[0].pos = centerPos;
+			// 首先居中 centerIndex 的图片
+			imgsArrangeCenterArr[0].pos = centerPos;
 
-		    // 取出要布局在上侧的图片的状态信息
-		    topImgSpliceIndex = Math.ceil(Math.random * (imgsArrangeArr.length - topImgNum));
-		    imgsArrangeTopArr = imgsArrangeArr.splice(topImgSpliceIndex, topImgNum);
+			// 居中的 centerIndex 的图片不需要旋转
+			imgsArrangeCenterArr[0].rotate = 0;
 
-		    // 布局位于上侧的图片
-		    imgsArrangeTopArr.forEach(function (value, index) {
-		    	imgsArrangeTopArr[index].pos = {
-		    		top: getRangeRandom(vPosRangeTopY[0], vPosRangeTopY[1]),
-		    		left: getRangeRandom(vPosRangeX[0], vPosRangeX[1])
-		    	}
-		    })
+			// 取出要布局在上侧的图片的状态信息
+			topImgSpliceIndex = Math.ceil(Math.random * (imgsArrangeArr.length - topImgNum));
+			imgsArrangeTopArr = imgsArrangeArr.splice(topImgSpliceIndex, topImgNum);
 
-		    // 布局位于两侧的图片
-		    for (let i = 0, j = imgsArrangeArr.length, k = j / 2; i< j; i++) {
-		    	let hPosRangeLORX = null;
+			// 布局位于上侧的图片
+			imgsArrangeTopArr.forEach(function (value, index) {
+				imgsArrangeTopArr[index] = {
+					pos: {
+						top: getRangeRandom(vPosRangeTopY[0], vPosRangeTopY[1]),
+						left: getRangeRandom(vPosRangeX[0], vPosRangeX[1])
+					},
+					rotate: get30DegRandom()
+				};
+			});
 
-		    	// 前半部分布局左边，后半部分布局右边
-		    	if (i < k) {
-		    		hPosRangeLORX = hPosRangeLeftSecX;
-		    	} else {
-		    		hPosRangeLORX = hPosRangeRightSecX;
-		    	}
+			// 布局位于两侧的图片
+			for (let i = 0, j = imgsArrangeArr.length, k = j / 2; i< j; i++) {
+				let hPosRangeLORX = null;
 
-		    	imgsArrangeArr[i].pos = {
-		    		top: getRangeRandom(hPosRangeY[0], hPosRangeY[1]),
-		    		left: getRangeRandom(hPosRangeLORX[0], hPosRangeLORX[1])
-		    	}
-		    }
+				// 前半部分布局左边，后半部分布局右边
+				if (i < k) {
+					hPosRangeLORX = hPosRangeLeftSecX;
+				} else {
+					hPosRangeLORX = hPosRangeRightSecX;
+				}
 
-		    if (imgsArrangeTopArr && imgsArrangeTopArr[0]) {
-		    	imgsArrangeArr.splice(topImgSpliceIndex, 0, imgsArrangeTopArr[0]);
-		    }
+				imgsArrangeArr[i] = {
+					pos: {
+						top: getRangeRandom(hPosRangeY[0], hPosRangeY[1]),
+						left: getRangeRandom(hPosRangeLORX[0], hPosRangeLORX[1])
+					},
+					rotate: get30DegRandom()
+				};
+			}
 
-		    imgsArrangeArr.splice(centerIndex, 0, imgsArrangeCenterArr[0]);
+			if (imgsArrangeTopArr && imgsArrangeTopArr[0]) {
+				imgsArrangeArr.splice(topImgSpliceIndex, 0, imgsArrangeTopArr[0]);
+			}
 
-		    this.setState({
-		    	imgsArrangeArr: imgsArrangeArr
-		    });
+			imgsArrangeArr.splice(centerIndex, 0, imgsArrangeCenterArr[0]);
+
+			this.setState({
+				imgsArrangeArr: imgsArrangeArr
+			});
 	}
 
 	// 组件加载以后，为每张图片计算其位置的范围
@@ -204,7 +229,8 @@ class AppComponent extends React.Component {
 					pos: {
 						left: 0,
 						top: 0
-					}
+					},
+					rotate: 0
 				}
 			}
 
