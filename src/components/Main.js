@@ -9,9 +9,11 @@ let imageDatas = require('../data/imageDatas.json');
 
 // 利用自执行函数，将图片名信息转换为图片URL路径信息
 imageDatas = (function genImageURL(imageDatasArr) {
+
 	for (let i = 0, j = imageDatasArr.length; i < j; i++) {
 		let singleImageData = imageDatasArr[i];
 
+		// webpack 打包信息中，将图片文件打包成一个URL信息
 		singleImageData.imageURL = require('../images/' + singleImageData.fileName);
 
 		imageDatasArr[i] = singleImageData;
@@ -35,6 +37,8 @@ function getRangeRandom(low, high) {
  * @return {int} 返回的角度值
  */
 function get30DegRandom() {
+
+	// 通过产生一个[0,1)的数与0.5比较大小，得到一个50%概率将随机的30度取负数
 	return (Math.random() > 0.5 ? '' : '-') + Math.ceil(Math.random() * 30);
 }
 
@@ -69,16 +73,21 @@ class ImageFigure extends React.Component {
 
 		// 如果图片的旋转角度有值且不为零，添加旋转角度
 		if (this.props.arrange.rotate) {
+
+			// 为 transform 添加不同的浏览器前缀
 			(['MozTransform', 'MsTransform', 'WebkitTransform', 'transform']).forEach(function (value) {
 				styleObj[value] = 'rotate(' + this.props.arrange.rotate + 'deg)';
 			}.bind(this));
 		}
 
 		if (this.props.isCenter) {
+
+			// 将位于中心的图片增加 z-index 值以防止被其余覆盖
 			styleObj.zIndex = 11;
 		}
 
 		let imgFigureClassName = 'img-figure';
+		// 为处于翻转状态的元素添加 is-inverse 的类名，显示相应的样式
 		imgFigureClassName += this.props.arrange.isInverse ? ' is-inverse' : '';
 
 		return (
@@ -100,6 +109,8 @@ class ImageFigure extends React.Component {
 class ControllerUnit extends React.Component {
 
 	handleClick(e) {
+
+		// 根据控制单元对于的图片位置决定翻转或居中
 		if (this.props.arrange.isCenter) {
 			this.props.inverse();
 		} else {
@@ -112,12 +123,15 @@ class ControllerUnit extends React.Component {
 
 	render () {
 
+		// 对于居中显示的图片对应的控制单元添加一个 Unicode 符号
+		// 在 App.scss 中添加了 font-family 和 .iconfont 的样式
+		// 字体文件存放在 /src/fonts/icons 中
 		let icon = this.props.arrange.isCenter ?
 				<i className="iconfont">&#xe6b2;</i> : <span></span>;
 
+		// 根据是否处于中心或翻转，添加相应的类名
 		let controllerUnitClassName = 'controller-unit';
 		controllerUnitClassName += this.props.arrange.isCenter ? ' is-center' : '';
-
 		controllerUnitClassName += this.props.arrange.isInverse ? ' is-inverse' : '';
 
 		return (
@@ -131,7 +145,7 @@ class ControllerUnit extends React.Component {
 class AppComponent extends React.Component {
 
 	Constant = {
-		centerPos: {
+		centerPos: {  // 中心位置的坐标
 			left: 0,
 			top: 0
 		},
@@ -154,8 +168,10 @@ class AppComponent extends React.Component {
 	inverse(index) {
 
 		return function () {
+
 			let imgsArrangeArr = this.state.imgsArrangeArr;
 
+			// 在闭包中存储了 index 值，可以修改 imgsArrangeArr 中相应索引值元素的 isInverse 属性
 			imgsArrangeArr[index].isInverse = !imgsArrangeArr[index].isInverse;
 
 			this.setState({
@@ -172,11 +188,14 @@ class AppComponent extends React.Component {
 	center(centerIndex) {
 
 		return function () {
+
+			// 在闭包中存储了 centerIndex 值，可以对对应索引值的元素进行居中
 			this.rearrange(centerIndex);
 		}.bind(this);
 	}
 
 	constructor(props) {
+
 		super(props);
 		this.state = {
 			imgsArrangeArr: [
@@ -200,6 +219,7 @@ class AppComponent extends React.Component {
 	 */
 	rearrange(centerIndex) {
 
+		// 从此对象的 Constant 中取出在 componentDidMount() 中计算出来的各种值
 		var imgsArrangeArr = this.state.imgsArrangeArr,
 			Constant = this.Constant,
 			centerPos = Constant.centerPos,
@@ -211,11 +231,16 @@ class AppComponent extends React.Component {
 			vPosRangeTopY = vPosRange.topY,
 			vPosRangeX = vPosRange.x,
 
+			// 定义了一个将位于上方显示的数组
 			imgsArrangeTopArr = [],
 			topImgNum = Math.floor(Math.random() * 2),  //取一个或者不取
 			topImgSpliceIndex = 0,
+
+			// 从 imgsArrangeArr 中取出 centerIndex 对应的元素，存入 imgsArrangeCenterArr 中
+			// imgsArrangeArr 将会去除被去除的元素，长度将减小 1
 			imgsArrangeCenterArr = imgsArrangeArr.splice(centerIndex, 1);
-			// 首先居中 centerIndex 的图片
+
+			// 设置居中元素的状态信息
 			imgsArrangeCenterArr[0] = {
 				pos: centerPos,
 				isInverse: false,
@@ -223,13 +248,14 @@ class AppComponent extends React.Component {
 			};
 
 			// 取出要布局在上侧的图片的状态信息
-			topImgSpliceIndex = Math.ceil(Math.random * (imgsArrangeArr.length - topImgNum));
+			// 在剩余的 imgsArrangeArr 中随机生成一个索引值，并取出该元素
+			topImgSpliceIndex = Math.ceil(Math.random() * (imgsArrangeArr.length - topImgNum));
 			imgsArrangeTopArr = imgsArrangeArr.splice(topImgSpliceIndex, topImgNum);
 
-			// 布局位于上侧的图片
+			// 设置位于上侧元素的状态信息
 			imgsArrangeTopArr.forEach(function (value, index) {
-				imgsArrangeTopArr[index] = {
 
+				imgsArrangeTopArr[index] = {
 					pos: {
 						top: getRangeRandom(vPosRangeTopY[0], vPosRangeTopY[1]),
 						left: getRangeRandom(vPosRangeX[0], vPosRangeX[1])
@@ -241,8 +267,9 @@ class AppComponent extends React.Component {
 
 			});
 
-			// 布局位于两侧的图片
+			// 设置位于两侧元素的状态信息
 			for (let i = 0, j = imgsArrangeArr.length, k = j / 2; i< j; i++) {
+
 				let hPosRangeLORX = null;
 
 				// 前半部分布局左边，后半部分布局右边
@@ -263,10 +290,13 @@ class AppComponent extends React.Component {
 				}
 			}
 
+			// 如果之前取出过位于上侧显示的图片，那么将其组合回数组中
 			if (imgsArrangeTopArr && imgsArrangeTopArr[0]) {
+				// 组合回的索引为 topImgSpliceIndex ，删除 0 个元素，添加的元素为 imgsArrangeTopArr[0]
 				imgsArrangeArr.splice(topImgSpliceIndex, 0, imgsArrangeTopArr[0]);
 			}
 
+			// 组合回中心显示的元素 索引为 centerIndex ，删除0个元素，添加元素为 imgsArrangeCenterArr[0]
 			imgsArrangeArr.splice(centerIndex, 0, imgsArrangeCenterArr[0]);
 
 			this.setState({
@@ -319,6 +349,8 @@ class AppComponent extends React.Component {
 			imgFigures = [];
 
 		imageDatas.forEach(function(value, index) {
+
+			// 如果未设置则初始化图片状态信息
 			if (!this.state.imgsArrangeArr[index]) {
 				this.state.imgsArrangeArr[index] = {
 					pos: {
